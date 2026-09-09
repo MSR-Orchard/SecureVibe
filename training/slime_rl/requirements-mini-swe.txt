@@ -1,0 +1,4 @@
+# Runtime packages validated by the 35B Mini-SWE launcher's preflight.
+mini-swe-agent==1.17.5
+swebench==4.1.0
+transformers==4.57.1

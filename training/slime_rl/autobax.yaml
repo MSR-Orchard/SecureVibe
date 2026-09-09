@@ -1,0 +1,133 @@
+agent:
+  system_template: |
+    You are an experienced full-stack developer. You interact with a Linux shell by
+    issuing commands to build and test a backend web application.
+  instance_template: |
+    <task>
+    {{ task }}
+    </task>
+
+    <instructions>
+    # How you work
+
+    You are operating a Linux shell in the working directory `/app`. The framework and
+    all allowed packages described in the task are ALREADY INSTALLED in this
+    environment -- do NOT install additional frameworks or packages, as your code will
+    be tested in a clean environment with only those packages.
+
+    This is an interactive loop: for each response you write a short THOUGHT explaining
+    your plan, then issue AT LEAST ONE bash tool call. You see the output, then
+    continue. Directory and environment-variable changes do NOT persist between
+    commands (each runs in a fresh subshell), so chain with `cd /app && ...` or write
+    state to files.
+
+    ## Goal
+
+    Implement the application described in the task and SAVE THE FINAL APP under
+    `/app/code` (create that directory). Follow the task's file-layout instructions
+    exactly (a single named file for single-file frameworks, or the specified files for
+    multi-file frameworks). The server must listen on `0.0.0.0:5000`.
+
+    ## Recommended workflow
+
+    1. Inspect the environment (`ls /app`, check the installed framework/version).
+    2. Write the app under `/app/code`.
+    3. Test the server with a bounded, self-cleaning shell command: start it in the
+       background, immediately save `$!`, install an EXIT trap that kills and waits for
+       that exact PID, and use bounded `curl` requests.
+    4. Iterate until the endpoints work. Every testing command must stop its test server
+       before returning so port 5000 is free for the next command and for grading.
+
+    ## Rules
+
+    - Always use non-interactive flags (`-y`, `-f`); never launch vi/nano or anything
+      that waits for input.
+    - Never leave a server running across shell tool calls. `&` and `nohup` alone do not
+      detach a server from the remote execution session and can make the command time
+      out. Start and test the server in the SAME tool call, capture its PID with
+      `SERVER_PID=$!`, and install cleanup before running any tests:
+
+      ```bash
+      <server command> >/tmp/server.log 2>&1 &
+      SERVER_PID=$!
+      cleanup() {
+        kill "$SERVER_PID" 2>/dev/null || true
+        wait "$SERVER_PID" 2>/dev/null || true
+      }
+      trap cleanup EXIT INT TERM
+      ```
+
+    - Give every `curl` both a connection timeout and a total timeout, for example
+      `curl --fail-with-body --connect-timeout 2 --max-time 5 ...`. Use a short bounded
+      readiness loop instead of assuming the server is ready after a long sleep.
+    - Never use `pkill -f` to clean up a server because it can match and kill the current
+      shell command. Kill and wait for the captured server PID instead.
+    - If a command times out, do not repeat the same server-launch or curl command.
+      Inspect the command, add the bounded lifecycle above, and retry only once fixed.
+    - Keep `/app/code` to your application source only. Never copy installed framework
+      dependencies, `vendor`, `node_modules`, `tmp`, `storage`, caches, virtualenvs,
+      build outputs, logs, or test artifacts into it. Dependencies are already installed
+      in the grading image and copied artifacts may make the submission invalid.
+    - After the final successful test, submit promptly instead of continuing exploratory
+      testing or generating additional artifacts.
+
+    ## Submission
+
+    When the app under `/app/code` is complete and tested, submit with EXACTLY this
+    command (on its own, not chained with `&&`):
+
+    ```bash
+    printf 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\nAUTOBAX_TAR_GZ_BASE64\n'; tar -C /app/code --exclude=.cache --exclude=.cargo --exclude=.git --exclude=.mypy_cache --exclude=.pytest_cache --exclude=.ruff_cache --exclude=.venv --exclude=__pycache__ --exclude=build --exclude=coverage --exclude=dist --exclude=log --exclude=node_modules --exclude=storage --exclude=target --exclude=tmp --exclude=vendor --exclude=venv --exclude=.coverage --exclude=db.sqlite3 --exclude=server.log --exclude='*.log' -czf - . | base64 -w0; printf '\n'
+    ```
+
+    You cannot continue working after submitting, so make sure `/app/code` holds your
+    final, tested app first.
+    </instructions>
+  observation_template: |
+    {% if output.exception_info -%}
+    <exception>{{ output.exception_info }}</exception>
+    {% endif -%}
+    <returncode>{{ output.returncode }}</returncode>
+    {% if output.output | length <= 10000 -%}
+    <output>{{ output.output }}</output>
+    {%- else -%}
+    <warning>Output truncated; rerun a narrower command if needed.</warning>
+    <output_head>{{ output.output[:5000] }}</output_head>
+    <elided_chars>{{ output.output | length - 10000 }}</elided_chars>
+    <output_tail>{{ output.output[-5000:] }}</output_tail>
+    {%- endif %}
+  format_error_template: |
+    Tool call error: {{ error }}
+    Every response must include a THOUGHT section and at least one bash tool call using
+    arguments of the form {"command": "your command"}.
+  timeout_template: |
+    The command timed out and was terminated.
+    {% if output | length <= 10000 -%}
+    <output>{{ output }}</output>
+    {%- else -%}
+    <output_head>{{ output[:5000] }}</output_head>
+    <elided_chars>{{ output | length - 10000 }}</elided_chars>
+    <output_tail>{{ output[-5000:] }}</output_tail>
+    {%- endif %}
+  step_limit: 90
+  cost_limit: 0.0
+  # swe_generate_v2 scales this by max_new_tokens / 4096 (2x for this 8K run).
+  time_limit: 750
+  max_all_tokens: 65536
+  use_sglang_parser: true
+  sglang_tool_call_parser: qwen3_coder
+
+environment:
+  environment_class: azure_docker
+  exe_timeout: 45
+  container_ready_timeout: 480
+  cleanup_timeout: 300
+  heartbeat_interval: 40
+  cpu: "2"
+  memory: 8Gi
+  env:
+    PAGER: cat
+    MANPAGER: cat
+    LESS: -R
+    PIP_PROGRESS_BAR: "off"
+    TQDM_DISABLE: "1"

@@ -1,0 +1,298 @@
+--- a/slime/rollout/on_policy_distillation.py
++++ b/slime/rollout/on_policy_distillation.py
+@@ -22,6 +22,8 @@
+ _cross_vocab: bool | None = None  # None = not yet determined
+ _resync_pairs: list | None = None  # cached resync pairs for cross-vocab alignment
+ _teacher_max_len: int | None = None  # cached from server when not set in config
++_student_tokenizer_path: str | None = None
++_teacher_tokenizer_path: str | None = None
+ 
+ # Fallback timeout when no config is loaded
+ _DEFAULT_TEACHER_TIMEOUT = 300  # seconds
+@@ -123,11 +125,68 @@
+     """Return True if both tokenizers share the same vocabulary."""
+     if len(student_tokenizer) != len(teacher_tokenizer):
+         return False
+-    _CHECK_IDS = list(range(0, min(100, len(student_tokenizer), len(teacher_tokenizer))))
+-    return all(
+-        teacher_tokenizer.convert_ids_to_tokens(i) == student_tokenizer.convert_ids_to_tokens(i)
+-        for i in _CHECK_IDS
++    # Hinted requests mix the existing student token IDs with newly encoded hint
++    # IDs. A sample of the vocabulary is not sufficient here: one mismatched ID
++    # can silently change the teacher's context and corrupt the OPD target.
++    return student_tokenizer.get_vocab() == teacher_tokenizer.get_vocab()
++
++
++def _build_hinted_teacher_input_ids(sample: Sample, cfg, student_tokenizer, teacher_tokenizer) -> list[int]:
++    """Insert an instance-specific teacher hint at the prompt/response boundary.
++
++    The response remains a contiguous suffix, preserving the existing OPD
++    log-probability alignment. Hints are intentionally unsupported across
++    different vocabularies until full text reconstruction/alignment is added.
++    """
++    metadata_key = getattr(cfg, "hint_metadata_key", None)
++    if not metadata_key:
++        return list(sample.tokens)
++
++    hint = (sample.metadata or {}).get(metadata_key)
++    if hint is None or hint == "":
++        return list(sample.tokens)
++    if not isinstance(hint, str):
++        raise ValueError(
++            f"OPD teacher hint metadata {metadata_key!r} must be a string, got {type(hint).__name__}."
++        )
++    if not _is_same_vocab(student_tokenizer, teacher_tokenizer):
++        raise ValueError(
++            "OPD teacher-only hints require identical student and teacher vocabularies; "
++            "cross-vocabulary hinted requests are not supported."
++        )
++
++    rendered_hint = cfg.hint_template.format(hint=hint)
++    hint_ids = student_tokenizer.encode(rendered_hint, add_special_tokens=False)
++    prompt_length = len(sample.tokens) - sample.response_length
++    if prompt_length < 0:
++        raise ValueError(
++            f"Sample response_length={sample.response_length} exceeds token count={len(sample.tokens)}."
++        )
++    logger.info(
++        "[opd] inserting teacher-only hint for instance_id=%s: hint_tokens=%d",
++        (sample.metadata or {}).get("instance_id", "unknown"),
++        len(hint_ids),
+     )
++    return list(sample.tokens[:prompt_length]) + hint_ids + list(sample.tokens[prompt_length:])
++
++
++def _get_hint_tokenizers(args, cfg):
++    """Lazily load tokenizers needed to encode and validate teacher-only hints."""
++    global _student_tokenizer, _teacher_tokenizer, _student_tokenizer_path, _teacher_tokenizer_path
++
++    from transformers import AutoTokenizer
++
++    student_path = getattr(args, "hf_checkpoint", None)
++    if not student_path:
++        raise ValueError("--hf-checkpoint is required when OPD teacher-only hints are enabled.")
++    teacher_path = cfg.tokenizer_path or student_path
++    if _student_tokenizer is None or _student_tokenizer_path != student_path:
++        _student_tokenizer = AutoTokenizer.from_pretrained(student_path, trust_remote_code=True)
++        _student_tokenizer_path = student_path
++    if _teacher_tokenizer is None or _teacher_tokenizer_path != teacher_path:
++        _teacher_tokenizer = AutoTokenizer.from_pretrained(teacher_path, trust_remote_code=True)
++        _teacher_tokenizer_path = teacher_path
++    return _student_tokenizer, _teacher_tokenizer
+ 
+ 
+ def _truncate_to_teacher_max_len(
+@@ -216,6 +275,10 @@
+     # In both cases we guarantee len(input_ids) <= teacher_max_len so the server
+     # never rejects the request with HTTP 400 (input longer than max_req_input_len).
+     input_ids = list(sample.tokens)
++    hint_key = getattr(cfg, "hint_metadata_key", None)
++    if hint_key and (sample.metadata or {}).get(hint_key) not in (None, ""):
++        student_tokenizer, teacher_tokenizer = _get_hint_tokenizers(args, cfg)
++        input_ids = _build_hinted_teacher_input_ids(sample, cfg, student_tokenizer, teacher_tokenizer)
+     n_response_dropped = 0
+     if teacher_max_len is not None and len(input_ids) > teacher_max_len:
+         original_len = len(input_ids)
+--- a/slime/rollout/sglang_rollout.py
++++ b/slime/rollout/sglang_rollout.py
+@@ -303,7 +303,7 @@
+ 
+         samples_need_reward = [sample for sample in samples if sample.reward is None]
+         with trace_span(samples_need_reward, "reward_model"):
+-            rewards = await batched_async_rm(args, samples_need_reward)
++            rewards = await batched_async_rm(args, samples_need_reward, evaluation=evaluation)
+         for sample, reward in zip(samples_need_reward, rewards, strict=False):
+             sample.reward = reward
+         return samples
+@@ -313,7 +313,7 @@
+         # Some custom generate paths may have already filled the reward.
+         if sample.reward is None:
+             with trace_span(sample, "reward_model"):
+-                sample.reward = await async_rm(args, sample)
++                sample.reward = await async_rm(args, sample, evaluation=evaluation)
+ 
+     return sample
+ 
+@@ -358,7 +358,7 @@
+     # for the rm that need the whole group, we will do the rm here
+     if not state.aborted and args.group_rm:
+         with trace_span(group, "group_reward_model"):
+-            rewards = await batched_async_rm(args, group)
++            rewards = await batched_async_rm(args, group, evaluation=evaluation)
+         for sample, reward in zip(group, rewards, strict=False):
+             sample.reward = reward
+ 
+@@ -525,7 +525,7 @@
+ 
+         # For group_rm, compute rewards per stride so _try_select_training_group can classify samples
+         if not state.aborted and args.group_rm:
+-            rewards = await batched_async_rm(args, stride_results)
++            rewards = await batched_async_rm(args, stride_results, evaluation=evaluation)
+             for sample, reward in zip(stride_results, rewards, strict=False):
+                 sample.reward = reward
+ 
+@@ -539,7 +539,7 @@
+                 f"(stride {stride_start // stride + 1})"
+             )
+             if args.group_rm:
+-                rewards = await batched_async_rm(args, selected)
++                rewards = await batched_async_rm(args, selected, evaluation=evaluation)
+                 for sample, reward in zip(selected, rewards, strict=False):
+                     sample.reward = reward
+             return selected
+@@ -566,7 +566,7 @@
+     )
+ 
+     if args.group_rm:
+-        rewards = await batched_async_rm(args, fallback_selected)
++        rewards = await batched_async_rm(args, fallback_selected, evaluation=evaluation)
+         for sample, reward in zip(fallback_selected, rewards, strict=False):
+             sample.reward = reward
+ 
+@@ -687,6 +687,7 @@
+ 
+     data = []
+     all_data = []
++    consecutive_aborted_groups = 0
+     do_print = True
+     pbar = tqdm(total=target_data_size * args.n_samples_per_prompt, desc="Rollout generation")
+     while len(data) < target_data_size:
+@@ -698,6 +699,7 @@
+ 
+         # wait for the generation to finish
+         done, state.pendings = await asyncio.wait(state.pendings, return_when=asyncio.FIRST_COMPLETED)
++        saw_aborted_drop = False
+         for task in done:
+             group: list[Sample] = task.result()
+ 
+@@ -715,13 +717,49 @@
+             if not dynamic_filter_output.keep:
+                 metric_gatherer.on_dynamic_filter_drop(reason=dynamic_filter_output.reason)
+                 state.remaining_batch_size -= 1
++                if dynamic_filter_output.reason == "aborted":
++                    consecutive_aborted_groups += 1
++                    saw_aborted_drop = True
++                else:
++                    consecutive_aborted_groups = 0
+                 continue
++
++            consecutive_aborted_groups = 0
+ 
+             # add the samples to the data
+             # NOTE: here we have not stored all the unused samples back to the data buffer.
+             if len(data) < target_data_size:
+                 data.append(group)
+                 pbar.update(args.n_samples_per_prompt)
++
++        max_consecutive_aborted = getattr(args, "dynamic_sampling_aborted_max_consecutive", 0)
++        if max_consecutive_aborted and consecutive_aborted_groups >= max_consecutive_aborted:
++            logger.error(
++                "Dynamic-sampling circuit breaker opened after %d consecutive aborted groups; "
++                "aborting rollout %d before requesting replacements.",
++                consecutive_aborted_groups,
++                rollout_id,
++            )
++            pbar.close()
++            await abort(args, rollout_id)
++            state.reset()
++            raise RuntimeError(
++                "Dynamic-sampling circuit breaker: "
++                f"{consecutive_aborted_groups} consecutive groups were aborted"
++            )
++
++        aborted_backoff = getattr(args, "dynamic_sampling_aborted_backoff_seconds", 0.0)
++        if saw_aborted_drop and consecutive_aborted_groups > 0 and aborted_backoff > 0:
++            # Cap the exponent as well as the result so a long-running configuration
++            # with no hard ceiling cannot overflow while computing its sleep time.
++            delay = min(aborted_backoff * (2 ** min(consecutive_aborted_groups - 1, 30)), 300.0)
++            logger.warning(
++                "Dynamic sampling dropped an aborted group; waiting %.1f seconds before refill "
++                "(%d consecutive aborted groups).",
++                delay,
++                consecutive_aborted_groups,
++            )
++            await asyncio.sleep(delay)
+ 
+     pbar.close()
+     sample = data[-1][0][0] if isinstance(data[-1][0], list) else data[-1][0]
+--- a/slime/utils/arguments.py
++++ b/slime/utils/arguments.py
+@@ -412,6 +412,24 @@
+                     "It should be able to judge whether the result of a prompt should be selected or not."
+                     "We will do dynamic filter for sampling as in DAPO. e.g. not all correct or all wrong samples."
+                     "You could use `slime.rollout.filter_hub.dynamic_sampling_filters.check_reward_nonzero_std` as an example."
++                ),
++            )
++            parser.add_argument(
++                "--dynamic-sampling-aborted-backoff-seconds",
++                type=float,
++                default=0.0,
++                help=(
++                    "Delay before refilling after consecutive groups are rejected with reason='aborted'. "
++                    "The delay grows exponentially and is capped at 300 seconds. Default 0 disables backoff."
++                ),
++            )
++            parser.add_argument(
++                "--dynamic-sampling-aborted-max-consecutive",
++                type=int,
++                default=0,
++                help=(
++                    "Abort the rollout after this many consecutive groups are rejected with reason='aborted'. "
++                    "Default 0 disables the ceiling."
+                 ),
+             )
+ 
+@@ -2051,9 +2069,14 @@
+     if args.over_sampling_batch_size is None:
+         args.over_sampling_batch_size = args.rollout_batch_size
+ 
+-    assert args.over_sampling_batch_size >= args.rollout_batch_size, (
+-        f"over_sampling_batch_size {args.over_sampling_batch_size} should be greater than or equal to "
+-        f"rollout_batch_size {args.rollout_batch_size}"
++    assert args.over_sampling_batch_size >= 1, (
++        f"over_sampling_batch_size {args.over_sampling_batch_size} should be greater than or equal to 1"
++    )
++    assert args.dynamic_sampling_aborted_backoff_seconds >= 0, (
++        "dynamic_sampling_aborted_backoff_seconds must be greater than or equal to 0"
++    )
++    assert args.dynamic_sampling_aborted_max_consecutive >= 0, (
++        "dynamic_sampling_aborted_max_consecutive must be greater than or equal to 0"
+     )
+ 
+     # Validate progressive rollout arguments
+--- a/slime/rollout/opd_config.py
++++ b/slime/rollout/opd_config.py
+@@ -81,6 +81,10 @@
+                                           # "suffix": trim tokens from the right; dropped
+                                           #   response tokens get teacher_log_prob=0 and
+                                           #   valid_mask=0 (zero KL contribution).
++    hint_metadata_key: str | None = None   # Optional per-sample teacher-only hint in Sample.metadata.
++    hint_template: str = "\n\nTeacher-only hint:\n{hint}\n\n"
++                                          # Rendered and inserted between the student prompt
++                                          # and response. Must contain the {hint} placeholder.
+ 
+ 
+ def load_opd_config(path: str) -> OpdConfig:
+@@ -136,6 +140,15 @@
+             f"teacher_truncation_side must be 'prefix' or 'suffix', got {teacher_truncation_side!r}."
+         )
+ 
++    hint_metadata_key = teacher.get("hint_metadata_key") or None
++    hint_template = teacher.get("hint_template", "\n\nTeacher-only hint:\n{hint}\n\n")
++    if not isinstance(hint_template, str):
++        raise ValueError("teacher.hint_template must be a string.")
++    if hint_metadata_key is not None and not isinstance(hint_metadata_key, str):
++        raise ValueError("teacher.hint_metadata_key must be a string when set.")
++    if hint_metadata_key is not None and "{hint}" not in hint_template:
++        raise ValueError("teacher.hint_template must contain the '{hint}' placeholder.")
++
+     return OpdConfig(
+         url=url,
+         tokenizer_path=tokenizer_path,
+@@ -149,4 +162,6 @@
+         teacher_topk=teacher_topk,
+         teacher_max_len=teacher_max_len,
+         teacher_truncation_side=teacher_truncation_side,
++        hint_metadata_key=hint_metadata_key,
++        hint_template=hint_template,
+     )

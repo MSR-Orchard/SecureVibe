@@ -1,0 +1,9 @@
+megatron:
+  - name: default
+    role: actor
+    overrides:
+      # Slime's colocated training actor is already created inside the outer
+      # torch-memory-saver region. The locally patched Megatron buffer regions
+      # cannot be nested with torch-memory-saver 0.0.9.
+      disable_grad_buffers_cpu_backup: false
+      disable_param_buffers_cpu_backup: false

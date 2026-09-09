@@ -1,0 +1,7 @@
+{
+  "orchard_url": "https://github.com/microsoft/Orchard.git",
+  "orchard_revision": "3d7d7e992f56e3fec98f80f52afd7bc2e90af0f4",
+  "slime_url": "https://github.com/MSR-Orchard/slime.git",
+  "slime_revision": "331efaaeef75c98aad6ba1a2f5f50bd8149f6ab9",
+  "patch_sha256": "5e422ffa7a1eeb493bd987f4bb6f8c393c7e33b646d46aacc30577ce2422de70"
+}

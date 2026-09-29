@@ -4,7 +4,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-SAFEVIBE_DIR="${SAFEVIBE_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+SECUREVIBE_DIR="${SECUREVIBE_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 SLIME_DIR="${SLIME_DIR:?Set SLIME_DIR to the patched Orchard trainer/slime checkout}"
 ONE_NODE_LAUNCHER="${SCRIPT_DIR}/train_mini_swe.sh"
 
@@ -29,7 +29,7 @@ export DYNAMIC_SAMPLING_FILTER_PATH="${DYNAMIC_SAMPLING_FILTER_PATH:-slime.rollo
 # The joint source reads JOINT_*_DATA. PROMPT_DATA is still required by Slime's
 # standard validation and rollout-size accounting.
 export PROMPT_DATA="${PROMPT_DATA:-${JOINT_PATCHEVAL_DATA}}"
-export SLIME_DIR SAFEVIBE_DIR
+export SLIME_DIR SECUREVIBE_DIR
 
 if [[ ! -f "${ONE_NODE_LAUNCHER}" ]]; then
   echo "One-node launcher does not exist: ${ONE_NODE_LAUNCHER}" >&2
@@ -53,7 +53,7 @@ if [[ ! -f "${AUTOBAX_SRC_DIR}/in_container_runner.py" ]]; then
   exit 1
 fi
 
-if ! PYTHONPATH="${SLIME_DIR}:${SAFEVIBE_DIR}:${PYTHONPATH:-}" python3 - \
+if ! PYTHONPATH="${SLIME_DIR}:${SECUREVIBE_DIR}:${PYTHONPATH:-}" python3 - \
   "${JOINT_PATCHEVAL_WEIGHT}" "${JOINT_AUTOBAX_WEIGHT}" \
   "${CUSTOM_RM_PATH}" "${DATA_SOURCE_PATH}" <<'PY'
 import inspect

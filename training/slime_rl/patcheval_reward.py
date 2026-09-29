@@ -1,7 +1,7 @@
-"""SafeVibe reward adapter for slime's Mini-SWE-Agent rollout.
+"""SecureVibe reward adapter for slime's Mini-SWE-Agent rollout.
 
 The agent rollout comes from ``examples.orchard_swe.swe_generate_v2``.  Its
-stock reward targets canonical SWE-bench records; SafeVibe records instead
+stock reward targets canonical SWE-bench records; SecureVibe records instead
 ship separate functional and hidden-security evaluation commands. This module
 evaluates the submitted patch in a fresh environment created by Mini-SWE's own
 environment factory and returns a graded reward for the two outcomes.
@@ -83,10 +83,10 @@ def _reward_artifact_path(metadata: dict[str, Any]) -> Path | None:
 
 
 def _persist_reward_artifact(sample: Sample, reward: float) -> Path | None:
-    """Write a collector-compatible SafeVibe reward record atomically.
+    """Write a collector-compatible SecureVibe reward record atomically.
 
     The collector treats only the top-level ``resolved`` field as success.
-    SafeVibe records the joint functional/security outcome explicitly because
+    SecureVibe records the joint functional/security outcome explicitly because
     a functional-only result can have a positive shaped reward without being a
     complete solution.
     """
@@ -95,7 +95,7 @@ def _persist_reward_artifact(sample: Sample, reward: float) -> Path | None:
     reward_path = _reward_artifact_path(metadata)
     if reward_path is None:
         logger.warning(
-            "Cannot persist SafeVibe reward artifact for %s: trajectory_path is missing",
+            "Cannot persist SecureVibe reward artifact for %s: trajectory_path is missing",
             metadata.get("instance_id", f"task_{sample.index}"),
         )
         return None
@@ -158,11 +158,11 @@ def _persist_reward_artifact(sample: Sample, reward: float) -> Path | None:
             handle.flush()
         os.replace(temp_path, reward_path)
         metadata["reward_artifact_path"] = str(reward_path)
-        logger.info("Saved SafeVibe reward artifact to %s", reward_path)
+        logger.info("Saved SecureVibe reward artifact to %s", reward_path)
         return reward_path
     except Exception as error:
         metadata["reward_artifact_error"] = f"{type(error).__name__}: {error}"
-        logger.exception("Failed to save SafeVibe reward artifact to %s", reward_path)
+        logger.exception("Failed to save SecureVibe reward artifact to %s", reward_path)
         return None
     finally:
         if temp_path is not None and temp_path.exists():
@@ -390,7 +390,7 @@ async def _evaluate(args: Any, sample: Sample) -> float:
         # whereas the model edited a deterministically masked agent image.
         # Reconstruct that exact baseline before applying the model submission.
         mask_applied, mask_output = await _apply_repo_patch(
-            env, workdir, mask_patch, "safevibe_mask.patch"
+            env, workdir, mask_patch, "securevibe_mask.patch"
         )
         if not mask_applied:
             metadata["reward_error"] = "mask_patch_did_not_apply"
@@ -407,7 +407,7 @@ async def _evaluate(args: Any, sample: Sample) -> float:
             return unresolved_reward
 
         patch_applied, apply_output = await _apply_repo_patch(
-            env, workdir, patch, "safevibe_model.patch"
+            env, workdir, patch, "securevibe_model.patch"
         )
         if not patch_applied:
             reward = _reward("SWE_REWARD_APPLY_FAILURE", "-0.75")
@@ -425,8 +425,8 @@ async def _evaluate(args: Any, sample: Sample) -> float:
             return reward
 
         if not separate_commands:
-            await _write_file(env, "/tmp/safevibe_eval.sh", legacy_eval_cmd)
-            eval_result = await _execute(env, "bash /tmp/safevibe_eval.sh")
+            await _write_file(env, "/tmp/securevibe_eval.sh", legacy_eval_cmd)
+            eval_result = await _execute(env, "bash /tmp/securevibe_eval.sh")
             passed = eval_result["returncode"] == 0
             reward = (
                 _reward("SWE_REWARD_FULL", "1.0")
@@ -452,14 +452,14 @@ async def _evaluate(args: Any, sample: Sample) -> float:
         functional_result = None
         if functional_available:
             await _write_file(
-                env, "/tmp/safevibe_functional_eval.sh", functional_eval_cmd
+                env, "/tmp/securevibe_functional_eval.sh", functional_eval_cmd
             )
             functional_result = await _execute(
-                env, "bash /tmp/safevibe_functional_eval.sh"
+                env, "bash /tmp/securevibe_functional_eval.sh"
             )
 
-        await _write_file(env, "/tmp/safevibe_security_eval.sh", security_eval_cmd)
-        security_result = await _execute(env, "bash /tmp/safevibe_security_eval.sh")
+        await _write_file(env, "/tmp/securevibe_security_eval.sh", security_eval_cmd)
+        security_result = await _execute(env, "bash /tmp/securevibe_security_eval.sh")
         functional_passed = (
             functional_result["returncode"] == 0
             if functional_result is not None
@@ -510,13 +510,13 @@ async def reward_func(args: Any, sample: Sample, **kwargs: Any) -> float:
         metadata = sample.metadata if isinstance(sample.metadata, dict) else {}
         sample.metadata = metadata
         metadata["reward_error"] = "reward_timeout"
-        logger.error("SafeVibe reward timed out for %s", metadata.get("instance_id"))
+        logger.error("SecureVibe reward timed out for %s", metadata.get("instance_id"))
         reward = fallback_reward
     except Exception as error:
         metadata = sample.metadata if isinstance(sample.metadata, dict) else {}
         sample.metadata = metadata
         metadata["reward_error"] = f"{type(error).__name__}: {error}"
-        logger.exception("SafeVibe reward failed for %s", metadata.get("instance_id"))
+        logger.exception("SecureVibe reward failed for %s", metadata.get("instance_id"))
         reward = fallback_reward
 
     _set_components(sample.metadata, final_reward=reward)

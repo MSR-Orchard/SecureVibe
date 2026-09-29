@@ -1,9 +1,9 @@
 # Megatron-LM dependency
 
-This bundle is copied from the main SafeVibe repository. It captures the
+This bundle is copied from the main SecureVibe repository. It captures the
 tracked local modifications from the reference Megatron checkout, originally
 exported for the security coding-agent OPD experiment. The SFT workflow also
-references this base revision and its SafeVibe changes.
+references this base revision and its SecureVibe changes.
 
 ## Version
 
@@ -22,7 +22,7 @@ included.
 
 ## Create a matching checkout
 
-Run from the SafeVibe repository root:
+Run from the SecureVibe repository root:
 
 ```bash
 export MEGATRON_BUNDLE="$PWD/dependencies/megatron-lm"

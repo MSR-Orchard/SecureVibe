@@ -1,6 +1,6 @@
-# SafeVibe
+# SecureVibe
 
-SafeVibe provides training workflows for security-aware coding agents:
+SecureVibe provides training workflows for security-aware coding agents:
 supervised fine-tuning (SFT), reinforcement learning (RL), and on-policy
 distillation (OPD). Evaluation on SecureGen, AutoBax, BaxBench, and SusVibes
 lives in the companion [SafeVibeEval project](https://github.com/MSR-Orchard/SafeVibeEval).
@@ -22,7 +22,7 @@ lives in the companion [SafeVibeEval project](https://github.com/MSR-Orchard/Saf
 
 Use [SafeVibeEval](https://github.com/MSR-Orchard/SafeVibeEval) for model execution, multi-CLI agents,
 and benchmark grading. SafeVibeEval has its own setup, dependencies, tests, and
-raw-data manifests; it does not require the SafeVibe training stack.
+raw-data manifests; it does not require the SecureVibe training stack.
 
 Clone SafeVibeEval and follow its evaluation setup:
 
@@ -58,9 +58,9 @@ the pinned revision, reference patch, checksum, and installation commands.
 ## Data and dependencies
 
 Training recipes and SafeVibeEval evaluation inputs are published in the
-[SafeVibe dataset on Hugging Face](https://huggingface.co/datasets/dqwang122/SafeVibe):
+[SecureVibe dataset on Hugging Face](https://huggingface.co/datasets/dqwang122/SafeVibe):
 [`recipes/`](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/recipes)
-for SafeVibe and [`raw/`](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/raw)
+for SecureVibe and [`raw/`](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/raw)
 for SafeVibeEval.
 
 Dataset files, model weights, credentials, and generated results are excluded
@@ -81,7 +81,7 @@ individual workflow guides. Evaluation tests belong to
 
 ## License
 
-SafeVibe's original code is released under the [MIT License](LICENSE).
+SecureVibe's original code is released under the [MIT License](LICENSE).
 Third-party components retain their own licenses; see
 [third-party notices](THIRD_PARTY_NOTICES.md). The code license does not grant
 access to or license benchmark datasets, model weights, or external services.

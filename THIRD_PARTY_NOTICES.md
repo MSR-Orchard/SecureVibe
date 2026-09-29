@@ -1,6 +1,6 @@
 # Third-party components
 
-The root MIT license applies to SafeVibe's original code. It does not replace
+The root MIT license applies to SecureVibe's original code. It does not replace
 the licenses or notices applicable to third-party code and assets.
 
 - **mini-swe-agent:** bundled under `dependencies/vendor/mini-swe-agent/`.
@@ -13,7 +13,7 @@ the licenses or notices applicable to third-party code and assets.
   or redistributing the patched checkout.
 - **Orchard and Slime:** obtained separately at the revisions recorded in
   [dependencies/orchard/versions.json](dependencies/orchard/versions.json).
-  Retain their upstream license files and source notices. SafeVibe's
+  Retain their upstream license files and source notices. SecureVibe's
   compatibility patch does not replace those terms.
 - **AutoBax harness:** bundled under `dependencies/autobax_arc/`, with snapshot
   provenance in [the dependency guide](dependencies/autobax_arc.README.md).

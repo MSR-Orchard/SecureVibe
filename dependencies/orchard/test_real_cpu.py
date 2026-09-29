@@ -24,7 +24,7 @@ for text in ['Check input types.','检查路径，拒绝 ../。','Unicode: café
  assert ids==prompt+student.encode(cfg.hint_template.format(hint=text),add_special_tokens=False)+response
  assert sample.__dict__==before
 print('Real tokenizer: exact vocab match; four hint/token-boundary cases passed.')
-with tempfile.TemporaryDirectory(prefix='safevibe-sampler-') as tmp:
+with tempfile.TemporaryDirectory(prefix='securevibe-sampler-') as tmp:
  root=Path(tmp); cfg=root/'config.yaml';cfg.write_text('agent: {}\n')
  for kind,profile in [('patcheval','repo_patch'),('autobax','app_builder')]:
   rows=[{'prompt':f'Synthetic {kind} task {i}','label':str(i),'metadata':{'task_type':kind,'reward_type':kind,'agent_profile':profile,'swe_config_path':str(cfg)}} for i in range(7)]

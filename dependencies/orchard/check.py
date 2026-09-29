@@ -14,9 +14,9 @@ HERE = Path(__file__).resolve().parent
 def check(slime, runtime=False):
     slime = slime.resolve()
     versions = json.loads((HERE / 'versions.json').read_text())
-    patch = HERE / 'safevibe.patch'
+    patch = HERE / 'securevibe.patch'
     if hashlib.sha256(patch.read_bytes()).hexdigest() != versions['patch_sha256']:
-        raise RuntimeError('SafeVibe patch checksum mismatch')
+        raise RuntimeError('SecureVibe patch checksum mismatch')
     revision = subprocess.check_output(['git','-C',str(slime),'rev-parse','HEAD'], text=True).strip()
     if revision != versions['slime_revision']:
         raise RuntimeError('Unexpected Slime revision; run dependencies/orchard/setup.py')

@@ -1,10 +1,10 @@
-# SafeVibe training datasets
+# SecureVibe training datasets
 
 Prepared SFT, RL, and OPD inputs live under `recipes/`.
 Dataset access and use remain subject to upstream terms.
 
 The prepared recipes are published under `recipes/` in the public
-[SafeVibe dataset on Hugging Face](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/recipes).
+[SecureVibe dataset on Hugging Face](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/recipes).
 
 ## Integrity
 

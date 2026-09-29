@@ -1,9 +1,9 @@
-# SafeVibe SFT
+# SecureVibe SFT
 
 Run repository-relative commands from `training/` unless stated otherwise.
 Set external dependency paths explicitly for your installation.
 
-This directory contains the SafeVibe supervised fine-tuning workflow for
+This directory contains the SecureVibe supervised fine-tuning workflow for
 Qwen3.5-35B-A3B using Slime and Megatron-LM.
 
 ## Layout
@@ -42,7 +42,7 @@ git -C slime checkout --detach 0988f0f4a0ab55d1bb3ce6285a597d912144fa80
 `SLIME_ROOT` defaults to a sibling `slime` checkout. `MEGATRON_PATH` defaults
 to `dependencies/megatron-lm/Megatron-LM`. Set `MEGATRON_PATH` explicitly to
 a compatible checkout. The reference configuration used revision
-`3714d81d418c9f1bca4594fc35f9e8289f652862` with additional SafeVibe changes.
+`3714d81d418c9f1bca4594fc35f9e8289f652862` with additional SecureVibe changes.
 The reference patch is included in `dependencies/megatron-lm/`. Follow the
 [Megatron dependency guide](../../dependencies/megatron-lm/README.md) to verify
 its checksum and apply it to the pinned revision before launching training.

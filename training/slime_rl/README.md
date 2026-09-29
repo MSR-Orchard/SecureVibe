@@ -38,7 +38,7 @@ The launchers verify the pinned revision and compatibility patch before starting
 Install the GPU training dependencies and this directory's `requirements.txt`
 in the Ray worker environment.
 
-**Compatibility:** the SafeVibe patch adds teacher-only hint support,
+**Compatibility:** the SecureVibe patch adds teacher-only hint support,
 evaluation-mode propagation, and aborted-group refill controls. Training uses
 local config routing and the public Orchard-SWE sandbox wrappers. Run the dependency checks and a short sandbox/GPU job to validate your
 deployment before a full training run.

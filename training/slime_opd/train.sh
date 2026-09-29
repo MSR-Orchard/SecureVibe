@@ -213,7 +213,7 @@ fi
 # ── Argument groups ────────────────────────────────────────────────────────
 WANDB_ARGS=(
    --use-wandb
-   --wandb-project "${WANDB_PROJECT:-safevibe-slime-opd}"
+   --wandb-project "${WANDB_PROJECT:-securevibe-slime-opd}"
    --wandb-group "${WANDB_GROUP:-${MODEL_NAME}-security-coding-agent-opd}"
    --disable-wandb-random-suffix
 )

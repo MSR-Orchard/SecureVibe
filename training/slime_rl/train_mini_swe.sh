@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end SafeVibe coding-agent RL for Qwen3.5-35B-A3B on one 8-GPU node
+# End-to-end SecureVibe coding-agent RL for Qwen3.5-35B-A3B on one 8-GPU node
 # using slime's Mini-SWE-Agent
 # v2 tool-calling rollout.  The model talks directly to the SGLang rollout
 # endpoint and uses Mini-SWE's bash tool/environment interface; Claude Code,
@@ -11,10 +11,10 @@
 set -eo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-SAFEVIBE_DIR="${SAFEVIBE_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
+SECUREVIBE_DIR="${SECUREVIBE_DIR:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 SLIME_DIR="${SLIME_DIR:?Set SLIME_DIR to the patched Orchard trainer/slime checkout}"
 python3 "${SCRIPT_DIR}/../../dependencies/orchard/check.py" "${SLIME_DIR}"
-MEGATRON_PATH="${MEGATRON_PATH:-${SAFEVIBE_DIR}/dependencies/megatron-lm/Megatron-LM}"
+MEGATRON_PATH="${MEGATRON_PATH:-${SECUREVIBE_DIR}/dependencies/megatron-lm/Megatron-LM}"
 EXPECTED_HEAD_HOST="${EXPECTED_HEAD_HOST:-$(hostname -s)}"
 
 # Conda's bundled GCC 7 linker cannot read the pod's newer glibc RELR
@@ -164,7 +164,7 @@ STAMP="$(date +%Y%m%d_%H%M%S)"
 RUN_ROOT="${RUN_ROOT:-${SCRIPT_DIR}/runs/${EXP_TAG}_${STAMP}}"
 
 # Resumable Megatron checkpoints live outside the source workspace.
-CHECKPOINT_ROOT="${CHECKPOINT_ROOT:-${SAFEVIBE_DIR}/checkpoints}"
+CHECKPOINT_ROOT="${CHECKPOINT_ROOT:-${SECUREVIBE_DIR}/checkpoints}"
 SAVE_PATH="${SAVE_PATH:-${CHECKPOINT_ROOT}/$(basename "${RUN_ROOT}")}"
 SAVE_INTERVAL="${SAVE_INTERVAL:-10}"
 if ! [[ "${SAVE_INTERVAL}" =~ ^[1-9][0-9]*$ ]]; then
@@ -176,7 +176,7 @@ fi
 # Ray's printed train.py command.
 USE_WANDB="${USE_WANDB:-1}"
 WANDB_MODE="${WANDB_MODE:-online}"
-WANDB_PROJECT="${WANDB_PROJECT:-safevibe-slime-rl}"
+WANDB_PROJECT="${WANDB_PROJECT:-securevibe-slime-rl}"
 WANDB_GROUP="${WANDB_GROUP:-qwen3.5-35b-a3b-swe-1node}"
 WANDB_ENTITY="${WANDB_ENTITY:-}"
 WANDB_DIR="${WANDB_DIR:-${RUN_ROOT}/wandb}"
@@ -452,7 +452,7 @@ export SGLANG_ENABLE_TORCH_INFERENCE_MODE="${SGLANG_ENABLE_TORCH_INFERENCE_MODE:
 export no_proxy="127.0.0.1,${MASTER_ADDR}"
 export NO_PROXY="${no_proxy}"
 
-if ! PYTHONPATH="${AZURE_MODAL_PATH}:${SLIME_DIR}:${SAFEVIBE_DIR}:${PYTHONPATH:-}" python3 - "${DYNAMIC_SAMPLING_FILTER_PATH}" <<'PY'
+if ! PYTHONPATH="${AZURE_MODAL_PATH}:${SLIME_DIR}:${SECUREVIBE_DIR}:${PYTHONPATH:-}" python3 - "${DYNAMIC_SAMPLING_FILTER_PATH}" <<'PY'
 import sys
 
 import minisweagent
@@ -497,7 +497,7 @@ if [[ "${PREFLIGHT_ONLY:-0}" == "1" ]]; then
   echo "SWE_CONFIG_PATH=${SWE_CONFIG_PATH}"
   echo "CUSTOM_RM_PATH=${CUSTOM_RM_PATH}"
   echo "DATA_SOURCE_PATH=${DATA_SOURCE_PATH}"
-  echo "HOSTFILE=${HOSTFILE:-${SAFEVIBE_DIR}/hostfile}"
+  echo "HOSTFILE=${HOSTFILE:-${SECUREVIBE_DIR}/hostfile}"
   echo "TRAINING_TOPOLOGY=nodes:${ACTOR_NUM_NODES},gpus_per_node:${ACTOR_NUM_GPUS_PER_NODE},tp:${TP_SIZE},cp:${CP_SIZE},pp:${PP_SIZE},ep:${EP_SIZE},etp:${ETP_SIZE}"
   echo "ROLLOUT_TOPOLOGY=gpus:${ROLLOUT_NUM_GPUS},tp:${ROLLOUT_TP_SIZE},dp:${ROLLOUT_DP_SIZE},ep:${ROLLOUT_EP_SIZE}"
   echo "BOUNDED_LOOP=num_rollout:${NUM_ROLLOUT},rollout_batch:${ROLLOUT_BATCH_SIZE},samples_per_prompt:${N_SAMPLES_PER_PROMPT},global_batch:${GLOBAL_BATCH_SIZE}"
@@ -540,7 +540,7 @@ sleep 30
 ray status
 
 # ============ runtime env propagated to ray workers ============
-export SLIME_DIR SAFEVIBE_DIR MEGATRON_PATH
+export SLIME_DIR SECUREVIBE_DIR MEGATRON_PATH
 RUNTIME_ENV_JSON=$(python3 - <<PY
 import json, os
 keys = (
@@ -574,7 +574,7 @@ env["TP_SOCKET_IFNAME"] = os.environ["GLOO_SOCKET_IFNAME"]
 env["NCCL_SOCKET_IFNAME"] = os.environ["NCCL_SOCKET_IFNAME"]
 env["PYTHONPATH"] = ":".join((
     os.environ["AZURE_MODAL_PATH"], os.environ["MEGATRON_PATH"],
-    os.environ["SLIME_DIR"], os.environ["SAFEVIBE_DIR"],
+    os.environ["SLIME_DIR"], os.environ["SECUREVIBE_DIR"],
 ))
 env["CUDA_DEVICE_MAX_CONNECTIONS"] = "1"
 env["NCCL_NVLS_ENABLE"] = "0"

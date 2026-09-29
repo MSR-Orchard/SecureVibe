@@ -1,7 +1,7 @@
 # AutoBax training harness
 
 This directory provides `in_container_runner.py`, registered scenarios, fixtures,
-and `autobax-harness.tar.gz` for SafeVibe RL and OPD rewards. Extracted source is
+and `autobax-harness.tar.gz` for SecureVibe RL and OPD rewards. Extracted source is
 ready to use. The reward modules upload it to grading sandboxes when a runner
 is not already available in the grading image.
 

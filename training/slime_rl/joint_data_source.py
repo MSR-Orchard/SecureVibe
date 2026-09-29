@@ -1,4 +1,4 @@
-"""Deterministic weighted prompt-group source for joint SafeVibe training."""
+"""Deterministic weighted prompt-group source for joint SecureVibe training."""
 
 from __future__ import annotations
 

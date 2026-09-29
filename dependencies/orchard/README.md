@@ -1,7 +1,7 @@
 # Orchard dependency
 
 This bundle pins the public Microsoft Orchard repository and its Slime trainer.
-`versions.json` records both revisions and the SHA-256 of `safevibe.patch`.
+`versions.json` records both revisions and the SHA-256 of `securevibe.patch`.
 Checkouts, model weights, datasets, credentials, and generated runs stay outside
 this directory.
 
@@ -35,7 +35,7 @@ update its checksum and revision pins, and repeat validation.
 - `arguments.py`: expose the refill controls and permit positive refill batches
   smaller than the target rollout batch.
 
-SafeVibe reward functions, task routing, and launchers remain in `training/`.
+SecureVibe reward functions, task routing, and launchers remain in `training/`.
 `training/orchard_compat.py` supplies per-sample config routing without changing
 shared rollout arguments.
 

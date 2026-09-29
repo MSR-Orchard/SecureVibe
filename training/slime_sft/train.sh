@@ -6,13 +6,13 @@ echo "Current date and time: ${date}"
 
 LAUNCH_DIR="$(pwd)"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-SAFEVIBE_DIR="$(cd -- "${SCRIPT_DIR}/.." &>/dev/null && pwd)"
+SECUREVIBE_DIR="$(cd -- "${SCRIPT_DIR}/.." &>/dev/null && pwd)"
 cd "${SCRIPT_DIR}"
 MODEL_CONFIG="${SCRIPT_DIR}/qwen3.5-35B-A3B.sh"
 TRAIN_ENTRYPOINT="${SCRIPT_DIR}/train_async.py"
 
-SLIME_ROOT=${SLIME_ROOT:-${SAFEVIBE_DIR}/../slime}
-MEGATRON_PATH=${MEGATRON_PATH:-${SAFEVIBE_DIR}/dependencies/megatron-lm/Megatron-LM}
+SLIME_ROOT=${SLIME_ROOT:-${SECUREVIBE_DIR}/../slime}
+MEGATRON_PATH=${MEGATRON_PATH:-${SECUREVIBE_DIR}/dependencies/megatron-lm/Megatron-LM}
 RUNTIME_PYTHONPATH="${SLIME_ROOT}:${MEGATRON_PATH}${PYTHONPATH:+:${PYTHONPATH}}"
 
 POLICY_MODEL=Qwen3.5-35B-A3B-Base
@@ -36,7 +36,7 @@ EP_SIZE=${EP_SIZE:-4}
 PP_SIZE=${PP_SIZE:-1}
 RUN_VARIANT=${RUN_VARIANT:-${ACTOR_GPUS_PER_NODE}gpu-tp${TP_SIZE}-cp${CP_SIZE}-ep${EP_SIZE}-pp${PP_SIZE}}
 
-WANDB_PROJECT=${WANDB_PROJECT:-safevibe-qwen35-slime}
+WANDB_PROJECT=${WANDB_PROJECT:-securevibe-qwen35-slime}
 WANDB_NAME=${WANDB_NAME:-qwen35-35b-a3b-sft-${ACTOR_GPUS_PER_NODE}gpu}
 WANDB_ENTITY=${WANDB_ENTITY:-}
 WANDB_MODE=${WANDB_MODE:-online}

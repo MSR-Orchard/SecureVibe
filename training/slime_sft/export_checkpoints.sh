@@ -27,10 +27,10 @@ set -euo pipefail
 #   DRY_RUN=1                               # print commands only
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
-SAFEVIBE_DIR="$(cd -- "${SCRIPT_DIR}/.." >/dev/null 2>&1 && pwd)"
+SECUREVIBE_DIR="$(cd -- "${SCRIPT_DIR}/.." >/dev/null 2>&1 && pwd)"
 
-SLIME_ROOT="${SLIME_ROOT:-${SAFEVIBE_DIR}/../slime}"
-MEGATRON_PATH="${MEGATRON_PATH:-${SAFEVIBE_DIR}/dependencies/megatron-lm/Megatron-LM}"
+SLIME_ROOT="${SLIME_ROOT:-${SECUREVIBE_DIR}/../slime}"
+MEGATRON_PATH="${MEGATRON_PATH:-${SECUREVIBE_DIR}/dependencies/megatron-lm/Megatron-LM}"
 SGLANG_PYTHONPATH="${SGLANG_PYTHONPATH:-}"
 PYTHON="${PYTHON:-python3}"
 

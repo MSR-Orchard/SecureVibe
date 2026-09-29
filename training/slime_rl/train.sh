@@ -285,7 +285,7 @@ if [[ "${USE_WANDB:-1}" == 1 ]]; then
   : "${WANDB_API_KEY:?Set WANDB_API_KEY when USE_WANDB=1}"
   WANDB_ARGS+=(
     --use-wandb
-    --wandb-project "${WANDB_PROJECT:-safevibe-slime-rl}"
+    --wandb-project "${WANDB_PROJECT:-securevibe-slime-rl}"
     --wandb-group "${WANDB_GROUP:-qwen35-1node-${ADVANTAGE_ESTIMATOR:-grpo}}"
     --wandb-dir "${WANDB_DIR:-${RUN_ROOT}/wandb}"
   )

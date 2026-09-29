@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch pinned public sources and apply the verified SafeVibe patch."""
+"""Fetch pinned public sources and apply the verified SecureVibe patch."""
 import argparse
 import hashlib
 import json
@@ -16,7 +16,7 @@ def git(path, *args, check=True):
 
 def setup(destination):
     versions = json.loads((HERE / 'versions.json').read_text())
-    patch = HERE / 'safevibe.patch'
+    patch = HERE / 'securevibe.patch'
     if hashlib.sha256(patch.read_bytes()).hexdigest() != versions['patch_sha256']:
         raise RuntimeError('Compatibility patch checksum mismatch')
     destination = destination.resolve()

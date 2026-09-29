@@ -1,4 +1,4 @@
-"""SafeVibe configuration routing for the public Orchard-SWE runtime."""
+"""SecureVibe configuration routing for the public Orchard-SWE runtime."""
 import copy
 import os
 

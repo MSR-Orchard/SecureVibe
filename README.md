@@ -3,7 +3,7 @@
 SecureVibe provides training workflows for security-aware coding agents:
 supervised fine-tuning (SFT), reinforcement learning (RL), and on-policy
 distillation (OPD). Evaluation on SecureGen, AutoBax, BaxBench, and SusVibes
-lives in the companion [SafeVibeEval project](https://github.com/MSR-Orchard/SafeVibeEval).
+lives in the companion [SecureVibeEval project](https://github.com/MSR-Orchard/SecureVibeEval).
 
 ## Repository layout
 
@@ -18,17 +18,17 @@ lives in the companion [SafeVibeEval project](https://github.com/MSR-Orchard/Saf
 - [`dependencies/`](dependencies/orchard/README.md): pinned Orchard integration,
   bundled mini-swe-agent, and AutoBax training harness.
 
-## Evaluate a model with SafeVibeEval
+## Evaluate a model with SecureVibeEval
 
-Use [SafeVibeEval](https://github.com/MSR-Orchard/SafeVibeEval) for model execution, multi-CLI agents,
-and benchmark grading. SafeVibeEval has its own setup, dependencies, tests, and
+Use [SecureVibeEval](https://github.com/MSR-Orchard/SecureVibeEval) for model execution, multi-CLI agents,
+and benchmark grading. SecureVibeEval has its own setup, dependencies, tests, and
 raw-data manifests; it does not require the SecureVibe training stack.
 
-Clone SafeVibeEval and follow its evaluation setup:
+Clone SecureVibeEval and follow its evaluation setup:
 
 ```bash
-git clone https://github.com/MSR-Orchard/SafeVibeEval.git
-cd SafeVibeEval/evaluation
+git clone https://github.com/MSR-Orchard/SecureVibeEval.git
+cd SecureVibeEval/evaluation
 ./setup.sh
 export MODEL=openai/your-model
 export LOCAL_BASE=http://127.0.0.1:8200/v1
@@ -36,9 +36,9 @@ export OUTPUT_PREFIX=your-model
 DRY_RUN=1 ./evaluate.sh
 ```
 
-Follow the [SafeVibeEval quickstart](https://github.com/MSR-Orchard/SafeVibeEval) to configure model
+Follow the [SecureVibeEval quickstart](https://github.com/MSR-Orchard/SecureVibeEval) to configure model
 and sandbox services, run evaluation, and grade the outputs. Evaluation inputs
-now belong in `SafeVibeEval/data/raw/`; prepared training inputs remain here in
+now belong in `SecureVibeEval/data/raw/`; prepared training inputs remain here in
 `data/recipes/`. Each project can be checked out independently.
 
 ## Train a model
@@ -57,11 +57,11 @@ the pinned revision, reference patch, checksum, and installation commands.
 
 ## Data and dependencies
 
-Training recipes and SafeVibeEval evaluation inputs are published in the
+Training recipes and SecureVibeEval evaluation inputs are published in the
 [SecureVibe dataset on Hugging Face](https://huggingface.co/datasets/dqwang122/SafeVibe):
 [`recipes/`](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/recipes)
 for SecureVibe and [`raw/`](https://huggingface.co/datasets/dqwang122/SafeVibe/tree/main/raw)
-for SafeVibeEval.
+for SecureVibeEval.
 
 Dataset files, model weights, credentials, and generated results are excluded
 from version control. Data manifests and documentation are included so inputs
@@ -77,7 +77,7 @@ for bundled licenses and attribution, including AutoBaxBuilder's MIT license.
 
 Training dependency checks and deployment validation are documented in the
 individual workflow guides. Evaluation tests belong to
-[SafeVibeEval](https://github.com/MSR-Orchard/SafeVibeEval#development-checks).
+[SecureVibeEval](https://github.com/MSR-Orchard/SecureVibeEval#development-checks).
 
 ## License
 
